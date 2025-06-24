@@ -9,6 +9,17 @@
 
 (def last-frame (atom 0))
 
+(defn move-camera
+  [window delta]
+  (when (= (GLFW/glfwGetKey window GLFW/GLFW_KEY_W) GLFW/GLFW_PRESS)
+    (camera/move :front 1 delta))
+  (when (= (GLFW/glfwGetKey window GLFW/GLFW_KEY_S) GLFW/GLFW_PRESS)
+    (camera/move :front -1 delta))
+  (when (= (GLFW/glfwGetKey window GLFW/GLFW_KEY_A) GLFW/GLFW_PRESS)
+    (camera/move :right -1 delta))
+  (when (= (GLFW/glfwGetKey window GLFW/GLFW_KEY_D) GLFW/GLFW_PRESS)
+    (camera/move :right 1 delta)))
+
 (defn -main
   "learnopengl"
   [& args]
@@ -34,6 +45,7 @@
         (let [now (GLFW/glfwGetTime)
               delta (- now @last-frame)]
           (reset! last-frame now)
+          (move-camera window delta)
 
           (GL33/glClearColor (float 0.1) (float 0.1) (float 0.1) (float 1))
           (GL33/glClear (bit-or GL33/GL_COLOR_BUFFER_BIT GL33/GL_DEPTH_BUFFER_BIT))

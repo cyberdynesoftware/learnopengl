@@ -34,12 +34,12 @@
 
 (def cube-model-matrix (new Matrix4f))
 
-(defn light-model-matrix
+(def light-model-matrix (new Matrix4f))
+
+(defn update-light-model-matrix
   []
-  (doto 
-    (new Matrix4f)
-    (.translate lightPos)
-    (.scale (new Vector3f (float 0.2)))))
+  (.translation light-model-matrix lightPos)
+  (.scale light-model-matrix (new Vector3f (float 0.2))))
 
 (defn create
   []
@@ -68,7 +68,6 @@
         light-cube (:light-cube scene)
         cube-shader (:cube-shader scene)
         light-shader (:light-shader scene)]
-    (camera/move delta)
     (rotate-light)
 
     (GL33/glUseProgram cube-shader)
@@ -88,7 +87,7 @@
     (GL33/glUseProgram light-shader)
     (shader/load-matrix light-shader "projection" (camera/perspective))
     (shader/load-matrix light-shader "view" (camera/view))
-    (shader/load-matrix light-shader "model" (light-model-matrix))
+    (shader/load-matrix light-shader "model" (update-light-model-matrix))
 
     (GL33/glBindVertexArray light-cube)
     (GL33/glDrawArrays GL33/GL_TRIANGLES 0 36)))

@@ -13,8 +13,6 @@
 (def right (new Vector3f))
 (def right-temp (new Vector3f))
 
-(def direction (atom nil))
-
 (def last-x (atom 200))
 (def last-y (atom 150))
 (def yaw (atom -90))
@@ -61,16 +59,13 @@
       (update-front-right-up))))
 
 (defn move
-  [delta]
-  (let [speed 2.5]
-    (.set front-temp front)
-    (.set right-temp right)
-    (condp = @direction
-      :forward (.add position (.mul (.normalize front-temp) (float (* speed delta))))
-      :backward (.add position (.mul (.normalize front-temp) (float (* speed delta -1))))
-      :left (.add position (.mul (.normalize right-temp) (float (* speed delta -1))))
-      :right (.add position (.mul (.normalize right-temp) (float (* speed delta))))
-      nil)))
+  [pivot direction delta]
+  (let [temp (condp = pivot
+               :front (.set front-temp front)
+               :right (.set right-temp right)
+               nil)
+        speed 2.5]
+    (.add position (.mul (.normalize temp) (float (* speed delta direction))))))
 
 (def view-matrix (new Matrix4f))
 
