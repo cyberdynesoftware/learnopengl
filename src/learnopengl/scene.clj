@@ -6,23 +6,29 @@
            [org.lwjgl BufferUtils]
            [org.lwjgl.opengl GL33]))
 
+(def lightPos (new Vector3f (float 1.2) (float 1) (float 2)))
+
 (defn create-float-buffer
   [vertices]
   (doto (BufferUtils/createFloatBuffer (count vertices))
     (.put (float-array vertices))
     (.flip)))
 
-(defn create-vertex-array
+(defn create-vertex-buffer
   [vertices]
-  (let [vbo (GL33/glGenBuffers)
-        vao (GL33/glGenVertexArrays)]
+  (let [vbo (GL33/glGenBuffers)]
     (GL33/glBindBuffer GL33/GL_ARRAY_BUFFER vbo)
-    (GL33/glBufferData GL33/GL_ARRAY_BUFFER (create-float-buffer vertices) GL33/GL_STATIC_DRAW)
+    (GL33/glBufferData GL33/GL_ARRAY_BUFFER (create-float-buffer vertices) GL33/GL_STATIC_DRAW)))
 
+(defn create-vertex-array
+  [load-normals]
+  (let [vao (GL33/glGenVertexArrays)]
     (GL33/glBindVertexArray vao)
-
-    (GL33/glVertexAttribPointer 0 3 GL33/GL_FLOAT false 12 0)
+    (GL33/glVertexAttribPointer 0 3 GL33/GL_FLOAT false 24 0)
     (GL33/glEnableVertexAttribArray 0)
+    (when load-normals
+      (GL33/glVertexAttribPointer 1 3 GL33/GL_FLOAT false 24 12)
+      (GL33/glEnableVertexAttribArray 1))
     vao))
 
 (def cube-model-matrix (new Matrix4f))
@@ -30,13 +36,14 @@
 (def light-model-matrix
   (doto 
     (new Matrix4f)
-    (.translate (new Vector3f (float 1.2) (float 1) (float 2)))
+    (.translate lightPos)
     (.scale (new Vector3f (float 0.2)))))
 
 (defn create
   []
-  {:cube (create-vertex-array data/vertices)
-   :light-cube (create-vertex-array data/vertices)
+  (create-vertex-buffer data/vertices-with-normals)
+  {:cube (create-vertex-array true)
+   :light-cube (create-vertex-array false)
    :cube-shader (shader/get-shader-program
                   (slurp "resources/shaders/cube.vs")
                   (slurp "resources/shaders/cube.fs"))
@@ -59,6 +66,7 @@
     (shader/load-matrix cube-shader "projection" (camera/perspective))
     (shader/load-matrix cube-shader "view" (camera/view))
     (shader/load-matrix cube-shader "model" cube-model-matrix)
+    (shader/load-vector3 cube-shader "lightPos" (.x lightPos) (.y lightPos) (.z lightPos))
 
     (GL33/glBindVertexArray cube)
     (GL33/glDrawArrays GL33/GL_TRIANGLES 0 36)
