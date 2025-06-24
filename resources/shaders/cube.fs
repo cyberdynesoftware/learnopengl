@@ -3,21 +3,21 @@ out vec4 FragColor;
 
 uniform vec3 objectColor;
 uniform vec3 lightColor;
-uniform vec3 lightPos;
 uniform vec3 viewPos;
 
 in vec3 Normal;
 in vec3 FragPos;
+in vec3 LightPos;
 
 void main()
 {
     vec3 ambientLight = lightColor * 0.1;
 
     vec3 norm = normalize(Normal);
-    vec3 lightDir = normalize(lightPos - FragPos);
+    vec3 lightDir = normalize(LightPos - FragPos);
     vec3 diffuseLight = max(dot(norm, lightDir), 0.0) * lightColor;
 
-    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 viewDir = normalize(-FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
     vec3 specularLight = pow(max(dot(viewDir, reflectDir), 0.0), 32) * lightColor * 0.5;
 

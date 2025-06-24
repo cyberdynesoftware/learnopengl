@@ -8,7 +8,6 @@
            [org.lwjgl.opengl GL33]))
 
 (def lightPos (new Vector3f (float 1.2) (float 1) (float 2)))
-(def radius 5)
 
 (defn create-float-buffer
   [vertices]
@@ -56,8 +55,12 @@
 
 (defn rotate-light
   []
-  (let [t (GLFW/glfwGetTime)]
-    (.set lightPos (float (* (Math/sin t) radius)) (float 1) (float (* (Math/cos t) radius)))))
+  (let [t (GLFW/glfwGetTime)
+        radius 3]
+    (.set lightPos
+          (float (* (Math/sin t) radius))
+          (float 1)
+          (float (* (Math/cos t) radius)))))
 
 (defn render
   [scene delta]
