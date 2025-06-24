@@ -67,6 +67,8 @@
     (shader/load-matrix cube-shader "view" (camera/view))
     (shader/load-matrix cube-shader "model" cube-model-matrix)
     (shader/load-vector3 cube-shader "lightPos" (.x lightPos) (.y lightPos) (.z lightPos))
+    (let [viewPos camera/position]
+      (shader/load-vector3 cube-shader "viewPos" (.x viewPos) (.y viewPos) (.z viewPos)))
 
     (GL33/glBindVertexArray cube)
     (GL33/glDrawArrays GL33/GL_TRIANGLES 0 36)
