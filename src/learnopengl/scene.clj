@@ -4,9 +4,11 @@
             [learnopengl.camera :as camera])
   (:import [org.joml Matrix4f Vector3f]
            [org.lwjgl BufferUtils]
+           [org.lwjgl.glfw GLFW]
            [org.lwjgl.opengl GL33]))
 
 (def lightPos (new Vector3f (float 1.2) (float 1) (float 2)))
+(def radius 5)
 
 (defn create-float-buffer
   [vertices]
@@ -33,7 +35,8 @@
 
 (def cube-model-matrix (new Matrix4f))
 
-(def light-model-matrix
+(defn light-model-matrix
+  []
   (doto 
     (new Matrix4f)
     (.translate lightPos)
@@ -51,6 +54,11 @@
                    (slurp "resources/shaders/light.vs")
                    (slurp "resources/shaders/light.fs"))})
 
+(defn rotate-light
+  []
+  (let [t (GLFW/glfwGetTime)]
+    (.set lightPos (float (* (Math/sin t) radius)) (float 1) (float (* (Math/cos t) radius)))))
+
 (defn render
   [scene delta]
   (let [cube (:cube scene)
@@ -58,6 +66,7 @@
         cube-shader (:cube-shader scene)
         light-shader (:light-shader scene)]
     (camera/move delta)
+    (rotate-light)
 
     (GL33/glUseProgram cube-shader)
     (shader/load-vector3 cube-shader "objectColor" 1 0.5 0.31)
@@ -76,7 +85,7 @@
     (GL33/glUseProgram light-shader)
     (shader/load-matrix light-shader "projection" (camera/perspective))
     (shader/load-matrix light-shader "view" (camera/view))
-    (shader/load-matrix light-shader "model" light-model-matrix)
+    (shader/load-matrix light-shader "model" (light-model-matrix))
 
     (GL33/glBindVertexArray light-cube)
     (GL33/glDrawArrays GL33/GL_TRIANGLES 0 36)))
