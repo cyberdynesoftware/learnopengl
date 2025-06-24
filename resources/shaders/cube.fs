@@ -6,5 +6,6 @@ uniform vec3 lightColor;
 
 void main()
 {
-    FragColor = vec4(lightColor * objectColor, 1.0);
+    vec3 ambientLight = lightColor * 0.1;
+    FragColor = vec4(ambientLight * objectColor, 1.0);
 }
