@@ -9,7 +9,6 @@
 
 (def light-position (new Vector3f (float 1.2) (float 1) (float 2)))
 (def light-color (new Vector3f (float 1) (float 1) (float 1)))
-(def light-color-temp (new Vector3f))
 
 (defn create-float-buffer
   [vertices]
@@ -64,14 +63,6 @@
           (float 1)
           (float (* (Math/cos t) radius)))))
 
-(defn change-color
-  []
-  (let [t (GLFW/glfwGetTime)]
-    (.set light-color
-          (float (* (Math/sin t) 2))
-          (float (* (Math/sin t) 0.7))
-          (float (* (Math/sin t) 1.3)))))
-
 (defn render
   [scene delta]
   (let [cube (:cube scene)
@@ -79,7 +70,6 @@
         cube-shader (:cube-shader scene)
         light-shader (:light-shader scene)]
     (rotate-light)
-    (change-color)
 
     (GL33/glUseProgram cube-shader)
 
@@ -88,17 +78,14 @@
     (shader/load-matrix cube-shader "model" cube-model-matrix)
     (shader/load-vector3 cube-shader "viewPos" camera/position)
 
-    (shader/load-float3 cube-shader "material.ambient" 1 0.5 0.31)
-    (shader/load-float3 cube-shader "material.diffuse" 1 0.5 0.31)
-    (shader/load-float3 cube-shader "material.specular" 0.5 0.5 0.5)
-    (shader/load-float1 cube-shader "material.shininess" 32)
+    (shader/load-float3 cube-shader "material.ambient" 0.24725 0.1995 0.0745)
+    (shader/load-float3 cube-shader "material.diffuse" 0.75164 0.60648 0.22648)
+    (shader/load-float3 cube-shader "material.specular" 0.628281 0.555802 0.366065)
+    (shader/load-float1 cube-shader "material.shininess" (* 0.4 128))
 
     (shader/load-vector3 cube-shader "light.position" light-position)
-    (.set light-color-temp light-color)
-    (let [diffuse-color (.mul light-color-temp (float 0.5))]
-      (shader/load-vector3 cube-shader "light.diffuse" diffuse-color))
-    (let [ambient-color (.mul light-color-temp (float 0.2))]
-      (shader/load-vector3 cube-shader "light.ambient" ambient-color))
+    (shader/load-vector3 cube-shader "light.diffuse" light-color)
+    (shader/load-vector3 cube-shader "light.ambient" light-color)
     (shader/load-float3 cube-shader "light.specular" 1 1 1)
 
     (GL33/glBindVertexArray cube)
