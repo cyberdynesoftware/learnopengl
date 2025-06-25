@@ -7,7 +7,9 @@
            [org.lwjgl.glfw GLFW]
            [org.lwjgl.opengl GL33]))
 
-(def lightPos (new Vector3f (float 1.2) (float 1) (float 2)))
+(def light-position (new Vector3f (float 1.2) (float 1) (float 2)))
+(def light-color (new Vector3f (float 1) (float 1) (float 1)))
+(def light-color-temp (new Vector3f))
 
 (defn create-float-buffer
   [vertices]
@@ -38,7 +40,7 @@
 
 (defn update-light-model-matrix
   []
-  (.translation light-model-matrix lightPos)
+  (.translation light-model-matrix light-position)
   (.scale light-model-matrix (new Vector3f (float 0.2))))
 
 (defn create
@@ -56,11 +58,19 @@
 (defn rotate-light
   []
   (let [t (GLFW/glfwGetTime)
-        radius 3]
-    (.set lightPos
+        radius 2]
+    (.set light-position
           (float (* (Math/sin t) radius))
           (float 1)
           (float (* (Math/cos t) radius)))))
+
+(defn change-color
+  []
+  (let [t (GLFW/glfwGetTime)]
+    (.set light-color
+          (float (* (Math/sin t) 2))
+          (float (* (Math/sin t) 0.7))
+          (float (* (Math/sin t) 1.3)))))
 
 (defn render
   [scene delta]
@@ -69,6 +79,7 @@
         cube-shader (:cube-shader scene)
         light-shader (:light-shader scene)]
     (rotate-light)
+    (change-color)
 
     (GL33/glUseProgram cube-shader)
 
@@ -82,9 +93,12 @@
     (shader/load-float3 cube-shader "material.specular" 0.5 0.5 0.5)
     (shader/load-float1 cube-shader "material.shininess" 32)
 
-    (shader/load-vector3 cube-shader "light.position" lightPos)
-    (shader/load-float3 cube-shader "light.ambient" 0.2 0.2 0.2)
-    (shader/load-float3 cube-shader "light.diffuse" 0.5 0.5 0.5)
+    (shader/load-vector3 cube-shader "light.position" light-position)
+    (.set light-color-temp light-color)
+    (let [diffuse-color (.mul light-color-temp (float 0.5))]
+      (shader/load-vector3 cube-shader "light.diffuse" diffuse-color))
+    (let [ambient-color (.mul light-color-temp (float 0.2))]
+      (shader/load-vector3 cube-shader "light.ambient" ambient-color))
     (shader/load-float3 cube-shader "light.specular" 1 1 1)
 
     (GL33/glBindVertexArray cube)
@@ -94,6 +108,7 @@
     (shader/load-matrix light-shader "projection" (camera/perspective))
     (shader/load-matrix light-shader "view" (camera/view))
     (shader/load-matrix light-shader "model" (update-light-model-matrix))
+    (shader/load-vector3 light-shader "lightColor" light-color)
 
     (GL33/glBindVertexArray light-cube)
     (GL33/glDrawArrays GL33/GL_TRIANGLES 0 36)))
