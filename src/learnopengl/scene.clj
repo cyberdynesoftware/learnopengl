@@ -71,15 +71,21 @@
     (rotate-light)
 
     (GL33/glUseProgram cube-shader)
-    (shader/load-vector3 cube-shader "objectColor" 1 0.5 0.31)
-    (shader/load-vector3 cube-shader "lightColor" 1 1 1)
 
     (shader/load-matrix cube-shader "projection" (camera/perspective))
     (shader/load-matrix cube-shader "view" (camera/view))
     (shader/load-matrix cube-shader "model" cube-model-matrix)
-    (shader/load-vector3 cube-shader "lightPos" (.x lightPos) (.y lightPos) (.z lightPos))
-    (let [viewPos camera/position]
-      (shader/load-vector3 cube-shader "viewPos" (.x viewPos) (.y viewPos) (.z viewPos)))
+    (shader/load-vector3 cube-shader "viewPos" camera/position)
+
+    (shader/load-float3 cube-shader "material.ambient" 1 0.5 0.31)
+    (shader/load-float3 cube-shader "material.diffuse" 1 0.5 0.31)
+    (shader/load-float3 cube-shader "material.specular" 0.5 0.5 0.5)
+    (shader/load-float1 cube-shader "material.shininess" 32)
+
+    (shader/load-vector3 cube-shader "light.position" lightPos)
+    (shader/load-float3 cube-shader "light.ambient" 0.2 0.2 0.2)
+    (shader/load-float3 cube-shader "light.diffuse" 0.5 0.5 0.5)
+    (shader/load-float3 cube-shader "light.specular" 1 1 1)
 
     (GL33/glBindVertexArray cube)
     (GL33/glDrawArrays GL33/GL_TRIANGLES 0 36)

@@ -43,9 +43,23 @@
       (.get matrix (.mallocFloat stack 16)))))
 
 (defn load-vector3
+  [shader-program location-id vector3]
+  (GL33/glUniform3f
+    (GL33/glGetUniformLocation shader-program location-id)
+    (.x vector3)
+    (.y vector3)
+    (.z vector3)))
+
+(defn load-float3
   [shader-program location-id x y z]
-    (GL33/glUniform3f
-      (GL33/glGetUniformLocation shader-program location-id)
-      (float x)
-      (float y)
-      (float z)))
+  (GL33/glUniform3f
+    (GL33/glGetUniformLocation shader-program location-id)
+    (float x)
+    (float y)
+    (float z)))
+
+(defn load-float1
+  [shader-program location-id f]
+  (GL33/glUniform1f
+    (GL33/glGetUniformLocation shader-program location-id)
+    (float f)))
