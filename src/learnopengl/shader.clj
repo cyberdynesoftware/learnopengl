@@ -59,7 +59,13 @@
     (float z)))
 
 (defn load-float1
-  [shader-program location-id f]
+  [shader-program location-id value]
   (GL33/glUniform1f
     (GL33/glGetUniformLocation shader-program location-id)
-    (float f)))
+    (float value)))
+
+(defn load-int
+  [shader-program location-id value]
+  (GL33/glUniform1i
+    (GL33/glGetUniformLocation shader-program location-id)
+    (int value)))
