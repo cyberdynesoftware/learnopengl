@@ -79,14 +79,17 @@
         light-shader (shader/get-shader-program
                        (slurp "resources/shaders/light.vert")
                        (slurp "resources/shaders/light.frag"))
-        diffuse-texture (load-texture "resources/assets/container2.png")]
+        diffuse-texture (load-texture "resources/assets/container2.png")
+        specular-texture (load-texture "resources/assets/container2_specular.png")]
     (GL33/glUseProgram cube-shader)
     (shader/load-int cube-shader "material.diffuse" 0)
+    (shader/load-int cube-shader "material.specular" 1)
     {:cube cube
      :light-cube light-cube
      :cube-shader cube-shader
      :light-shader light-shader
-     :diffuse-texture diffuse-texture}))
+     :diffuse-texture diffuse-texture
+     :specular-texture specular-texture}))
 
 (def cube-model-matrix (new Matrix4f))
 
@@ -130,6 +133,9 @@
 
     (GL33/glActiveTexture GL33/GL_TEXTURE0)
     (GL33/glBindTexture GL33/GL_TEXTURE_2D (:diffuse-texture scene))
+
+    (GL33/glActiveTexture GL33/GL_TEXTURE1)
+    (GL33/glBindTexture GL33/GL_TEXTURE_2D (:specular-texture scene))
 
     (GL33/glBindVertexArray cube)
     (GL33/glDrawArrays GL33/GL_TRIANGLES 0 36)
