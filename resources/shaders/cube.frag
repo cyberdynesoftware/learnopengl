@@ -8,6 +8,7 @@ in vec2 TexCoord;
 struct Material {
     sampler2D diffuse;
     sampler2D specular;
+    sampler2D emission;
     float shininess;
 };
 
@@ -25,8 +26,9 @@ uniform Light light;
 void main()
 {
     vec3 boxTexture = vec3(texture(material.diffuse, TexCoord));
+    vec3 emissionMap = vec3(texture(material.emission, TexCoord));
 
-    vec3 ambientLight = light.ambient * boxTexture;
+    vec3 ambientLight = light.ambient * (boxTexture + emissionMap);
 
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(light.position - FragPos);
