@@ -112,6 +112,8 @@
           (float 1)
           (float (* (Math/cos t) radius)))))
 
+(def pivot (new Vector3f (float 1) (float 0.3) (float 0.5)))
+
 (defn render
   [scene delta]
   (let [cube (:cube scene)
@@ -124,12 +126,12 @@
 
     (shader/load-matrix cube-shader "projection" (camera/perspective))
     (shader/load-matrix cube-shader "view" (camera/view))
-    (shader/load-matrix cube-shader "model" cube-model-matrix)
     (shader/load-vector3 cube-shader "viewPos" camera/position)
 
     (shader/load-float1 cube-shader "material.shininess" 64)
 
-    (shader/load-vector3 cube-shader "light.position" light-position)
+    ;(shader/load-vector3 cube-shader "light.position" light-position)
+    (shader/load-float3 cube-shader "light.direction" -0.2 -1 -0.3)
     (shader/load-float3 cube-shader "light.ambient" 0.2 0.2 0.2)
     (shader/load-float3 cube-shader "light.diffuse" 0.5 0.5 0.5)
     (shader/load-float3 cube-shader "light.specular" 1 1 1)
@@ -141,10 +143,15 @@
     (GL33/glBindTexture GL33/GL_TEXTURE_2D (:specular-texture scene))
 
     (GL33/glActiveTexture GL33/GL_TEXTURE2)
-    (GL33/glBindTexture GL33/GL_TEXTURE_2D (:emission-map scene))
+    ;(GL33/glBindTexture GL33/GL_TEXTURE_2D (:emission-map scene))
 
     (GL33/glBindVertexArray cube)
-    (GL33/glDrawArrays GL33/GL_TRIANGLES 0 36)
+
+    (doseq [[position angle] (partition 2 (interleave data/cube-positions (range 20 400 20)))]
+      (.translation cube-model-matrix position)
+      (.rotate cube-model-matrix (org.joml.Math/toRadians (float angle)) pivot)
+      (shader/load-matrix cube-shader "model" cube-model-matrix)
+      (GL33/glDrawArrays GL33/GL_TRIANGLES 0 36))
 
     (GL33/glUseProgram light-shader)
 
@@ -153,5 +160,5 @@
     (shader/load-matrix light-shader "model" (update-light-model-matrix))
     (shader/load-vector3 light-shader "lightColor" light-color)
 
-    (GL33/glBindVertexArray light-cube)
-    (GL33/glDrawArrays GL33/GL_TRIANGLES 0 36)))
+    (GL33/glBindVertexArray light-cube)))
+    ;(GL33/glDrawArrays GL33/GL_TRIANGLES 0 36)))

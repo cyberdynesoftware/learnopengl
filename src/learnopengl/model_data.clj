@@ -1,4 +1,5 @@
-(ns learnopengl.model-data)
+(ns learnopengl.model-data
+  (:import [org.joml Vector3f]))
 
 (def vertices [
     -0.5, -0.5, -0.5,
@@ -129,3 +130,14 @@
      0.5,  0.5,  0.5,  0.0,  1.0,  0.0,  1.0, 0.0,
     -0.5,  0.5,  0.5,  0.0,  1.0,  0.0,  0.0, 0.0,
     -0.5,  0.5, -0.5,  0.0,  1.0,  0.0,  0.0, 1.0])
+
+(def cube-positions [(new Vector3f (float 0) (float 0) (float 0))
+                     (new Vector3f (float 2) (float 5) (float -15))
+                     (new Vector3f (float -1.5) (float -2.2) (float -2.5))
+                     (new Vector3f (float -3.8) (float -2) (float -12.3))
+                     (new Vector3f (float 2.4) (float -0.4) (float -3.5))
+                     (new Vector3f (float -1.7) (float 3) (float -7.5))
+                     (new Vector3f (float 1.3) (float -2) (float -2.5))
+                     (new Vector3f (float 1.5) (float 2) (float -2.5))
+                     (new Vector3f (float 1.5) (float 0.2) (float -1.5))
+                     (new Vector3f (float -1.3) (float 1) (float -1.5))])
