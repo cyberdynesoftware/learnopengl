@@ -80,19 +80,16 @@
                        (slurp "resources/shaders/light.vert")
                        (slurp "resources/shaders/light.frag"))
         diffuse-texture (load-texture "resources/assets/container2.png")
-        specular-texture (load-texture "resources/assets/container2_specular.png")
-        emission-map (load-texture "resources/assets/matrix.jpg")]
+        specular-texture (load-texture "resources/assets/container2_specular.png")]
     (GL33/glUseProgram cube-shader)
     (shader/load-int cube-shader "material.diffuse" 0)
     (shader/load-int cube-shader "material.specular" 1)
-    (shader/load-int cube-shader "material.emission" 2)
     {:cube cube
      :light-cube light-cube
      :cube-shader cube-shader
      :light-shader light-shader
      :diffuse-texture diffuse-texture
-     :specular-texture specular-texture
-     :emission-map emission-map}))
+     :specular-texture specular-texture}))
 
 (def cube-model-matrix (new Matrix4f))
 
@@ -130,20 +127,22 @@
 
     (shader/load-float1 cube-shader "material.shininess" 64)
 
-    ;(shader/load-vector3 cube-shader "light.position" light-position)
-    (shader/load-float3 cube-shader "light.direction" -0.2 -1 -0.3)
+    (shader/load-vector3 cube-shader "light.position" light-position)
+    ;(shader/load-float3 cube-shader "light.direction" -0.2 -1 -0.3)
+
     (shader/load-float3 cube-shader "light.ambient" 0.2 0.2 0.2)
     (shader/load-float3 cube-shader "light.diffuse" 0.5 0.5 0.5)
     (shader/load-float3 cube-shader "light.specular" 1 1 1)
+
+    (shader/load-float1 cube-shader "light.constant" 1)
+    (shader/load-float1 cube-shader "light.linear" 0.09)
+    (shader/load-float1 cube-shader "light.quadratic" 0.032)
 
     (GL33/glActiveTexture GL33/GL_TEXTURE0)
     (GL33/glBindTexture GL33/GL_TEXTURE_2D (:diffuse-texture scene))
 
     (GL33/glActiveTexture GL33/GL_TEXTURE1)
     (GL33/glBindTexture GL33/GL_TEXTURE_2D (:specular-texture scene))
-
-    (GL33/glActiveTexture GL33/GL_TEXTURE2)
-    ;(GL33/glBindTexture GL33/GL_TEXTURE_2D (:emission-map scene))
 
     (GL33/glBindVertexArray cube)
 
@@ -160,5 +159,5 @@
     (shader/load-matrix light-shader "model" (update-light-model-matrix))
     (shader/load-vector3 light-shader "lightColor" light-color)
 
-    (GL33/glBindVertexArray light-cube)))
-    ;(GL33/glDrawArrays GL33/GL_TRIANGLES 0 36)))
+    (GL33/glBindVertexArray light-cube)
+    (GL33/glDrawArrays GL33/GL_TRIANGLES 0 36)))
