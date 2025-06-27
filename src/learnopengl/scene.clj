@@ -111,6 +111,9 @@
 
 (def pivot (new Vector3f (float 1) (float 0.3) (float 0.5)))
 
+(def spotlight-cut-off (Math/cos (Math/toRadians 12.5)))
+(def spotlight-outer-cut-off (Math/cos (Math/toRadians 17.5)))
+
 (defn render
   [scene delta]
   (let [cube (:cube scene)
@@ -125,13 +128,15 @@
     (shader/load-matrix cube-shader "view" (camera/view))
     (shader/load-vector3 cube-shader "viewPos" camera/position)
 
-    (shader/load-float1 cube-shader "material.shininess" 64)
+    (shader/load-float1 cube-shader "material.shininess" 32)
 
-    (shader/load-vector3 cube-shader "light.position" light-position)
-    ;(shader/load-float3 cube-shader "light.direction" -0.2 -1 -0.3)
+    (shader/load-vector3 cube-shader "light.position" camera/position)
+    (shader/load-vector3 cube-shader "light.direction" camera/front)
+    (shader/load-float1 cube-shader "light.cutOff" spotlight-cut-off)
+    (shader/load-float1 cube-shader "light.outerCutOff" spotlight-outer-cut-off)
 
-    (shader/load-float3 cube-shader "light.ambient" 0.2 0.2 0.2)
-    (shader/load-float3 cube-shader "light.diffuse" 0.5 0.5 0.5)
+    (shader/load-float3 cube-shader "light.ambient" 0.1 0.1 0.1)
+    (shader/load-float3 cube-shader "light.diffuse" 0.8 0.8 0.8)
     (shader/load-float3 cube-shader "light.specular" 1 1 1)
 
     (shader/load-float1 cube-shader "light.constant" 1)
