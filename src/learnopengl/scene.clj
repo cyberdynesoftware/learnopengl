@@ -8,7 +8,6 @@
            [org.lwjgl.glfw GLFW]
            [org.lwjgl.opengl GL33]))
 
-(def light-position (new Vector3f (float 1.2) (float 1) (float 2)))
 (def light-color (new Vector3f (float 1) (float 1) (float 1)))
 
 (defn create-float-buffer
@@ -92,25 +91,10 @@
      :specular-texture specular-texture}))
 
 (def cube-model-matrix (new Matrix4f))
-
 (def light-model-matrix (new Matrix4f))
-
-(defn update-light-model-matrix
-  []
-  (.translation light-model-matrix light-position)
-  (.scale light-model-matrix (new Vector3f (float 0.2))))
-
-(defn rotate-light
-  []
-  (let [t (GLFW/glfwGetTime)
-        radius 2]
-    (.set light-position
-          (float (* (Math/sin t) radius))
-          (float 1)
-          (float (* (Math/cos t) radius)))))
+(def light-scale (new Vector3f (float 0.2)))
 
 (def pivot (new Vector3f (float 1) (float 0.3) (float 0.5)))
-
 (def spotlight-cut-off (Math/cos (Math/toRadians 12.5)))
 (def spotlight-outer-cut-off (Math/cos (Math/toRadians 17.5)))
 
@@ -120,8 +104,6 @@
         light-cube (:light-cube scene)
         cube-shader (:cube-shader scene)
         light-shader (:light-shader scene)]
-    (rotate-light)
-
     (GL33/glUseProgram cube-shader)
 
     (shader/load-matrix cube-shader "projection" (camera/perspective))
@@ -130,18 +112,37 @@
 
     (shader/load-float1 cube-shader "material.shininess" 32)
 
-    (shader/load-vector3 cube-shader "light.position" camera/position)
-    (shader/load-vector3 cube-shader "light.direction" camera/front)
-    (shader/load-float1 cube-shader "light.cutOff" spotlight-cut-off)
-    (shader/load-float1 cube-shader "light.outerCutOff" spotlight-outer-cut-off)
+    (shader/load-float3 cube-shader "dirLight.direction" -0.2 -1 -0.3)
+    (shader/load-float3 cube-shader "dirLight.ambient" 0.05 0.05 0.05)
+    (shader/load-float3 cube-shader "dirLight.diffuse" 0.4 0.4 0.4)
+    (shader/load-float3 cube-shader "dirLight.specular" 0.5 0.5 0.5)
 
-    (shader/load-float3 cube-shader "light.ambient" 0.1 0.1 0.1)
-    (shader/load-float3 cube-shader "light.diffuse" 0.8 0.8 0.8)
-    (shader/load-float3 cube-shader "light.specular" 1 1 1)
+    (doseq [index (range 4)]
+      (shader/load-vector3 cube-shader
+                           (format "pointLights[%d].position" index)
+                           (get data/point-light-positions index))
 
-    (shader/load-float1 cube-shader "light.constant" 1)
-    (shader/load-float1 cube-shader "light.linear" 0.09)
-    (shader/load-float1 cube-shader "light.quadratic" 0.032)
+      (shader/load-float3 cube-shader (format "pointLights[%d].ambient" index) 0.05 0.05 0.05)
+      (shader/load-float3 cube-shader (format "pointLights[%d].diffuse" index) 0.8 0.8 0.8)
+      (shader/load-float3 cube-shader (format "pointLights[%d].specular" index) 1 1 1)
+
+      (shader/load-float1 cube-shader (format "pointLights[%d].constant" index) 1)
+      (shader/load-float1 cube-shader (format "pointLights[%d].linear" index) 0.09)
+      (shader/load-float1 cube-shader (format "pointLights[%d].quadratic" index) 0.032))
+
+    (shader/load-vector3 cube-shader "spotLight.position" camera/position)
+    (shader/load-vector3 cube-shader "spotLight.direction" camera/front)
+
+    (shader/load-float1 cube-shader "spotLight.cutOff" spotlight-cut-off)
+    (shader/load-float1 cube-shader "spotLight.outerCutOff" spotlight-outer-cut-off)
+
+    (shader/load-float3 cube-shader "spotLight.ambient" 0 0 0)
+    (shader/load-float3 cube-shader "spotLight.diffuse" 1 1 1)
+    (shader/load-float3 cube-shader "spotLight.specular" 1 1 1)
+
+    (shader/load-float1 cube-shader "spotLight.constant" 1)
+    (shader/load-float1 cube-shader "spotLight.linear" 0.09)
+    (shader/load-float1 cube-shader "spotLight.quadratic" 0.032)
 
     (GL33/glActiveTexture GL33/GL_TEXTURE0)
     (GL33/glBindTexture GL33/GL_TEXTURE_2D (:diffuse-texture scene))
@@ -158,11 +159,14 @@
       (GL33/glDrawArrays GL33/GL_TRIANGLES 0 36))
 
     (GL33/glUseProgram light-shader)
+    (GL33/glBindVertexArray light-cube)
 
     (shader/load-matrix light-shader "projection" (camera/perspective))
     (shader/load-matrix light-shader "view" (camera/view))
-    (shader/load-matrix light-shader "model" (update-light-model-matrix))
     (shader/load-vector3 light-shader "lightColor" light-color)
 
-    (GL33/glBindVertexArray light-cube)
-    (GL33/glDrawArrays GL33/GL_TRIANGLES 0 36)))
+    (doseq [position data/point-light-positions]
+      (.translation light-model-matrix position)
+      (.scale light-model-matrix light-scale)
+      (shader/load-matrix light-shader "model" light-model-matrix)
+      (GL33/glDrawArrays GL33/GL_TRIANGLES 0 36))))

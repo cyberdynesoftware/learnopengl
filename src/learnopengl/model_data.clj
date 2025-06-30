@@ -141,3 +141,8 @@
                      (new Vector3f (float 1.5) (float 2) (float -2.5))
                      (new Vector3f (float 1.5) (float 0.2) (float -1.5))
                      (new Vector3f (float -1.3) (float 1) (float -1.5))])
+
+(def point-light-positions [(new Vector3f (float 0.7), (float 0.2), (float 2.0)),
+                            (new Vector3f (float 2.3), (float -3.3), (float -4.0)),
+                            (new Vector3f (float -4.0), (float 2.0), (float -12.0)),
+                            (new Vector3f (float 0.0), (float 0.0), (float -3.0))])
