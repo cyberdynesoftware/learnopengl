@@ -1,11 +1,15 @@
 (ns learnopengl.core
   (:require [learnopengl.scene :as scene]
             [learnopengl.input :as input]
-            [learnopengl.camera :as camera])
+            [learnopengl.camera :as camera]
+            [learnopengl.mesh-model :as mesh])
   (:import [org.lwjgl.glfw GLFW]
            [org.lwjgl.opengl GL GL33]
            [org.lwjgl.system MemoryUtil])
   (:gen-class))
+
+(def foo (atom (mesh/read-model "resources/assets/backpack/backpack.obj")))
+(count @foo)
 
 (def last-frame (atom 0))
 

@@ -12,6 +12,8 @@
                  [org.lwjgl/lwjgl-stb "3.3.6" :classifier "natives-linux"]
                  [org.lwjgl/lwjgl-glfw "3.3.6"]
                  [org.lwjgl/lwjgl-glfw "3.3.6" :classifier "natives-linux"]
+                 [org.lwjgl/lwjgl-assimp "3.3.6"]
+                 [org.lwjgl/lwjgl-assimp "3.3.6" :classifier "natives-linux"]
                  [org.joml/joml "1.10.8"]]
   :main ^:skip-aot learnopengl.core
   :target-path "target/%s"
