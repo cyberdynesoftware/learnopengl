@@ -9,7 +9,7 @@
   (:gen-class))
 
 (def foo (atom (mesh/read-model "resources/assets/backpack/backpack.obj")))
-(count @foo)
+(println (count @foo))
 
 (def last-frame (atom 0))
 

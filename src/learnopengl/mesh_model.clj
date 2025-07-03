@@ -1,41 +1,34 @@
 (ns learnopengl.mesh-model
-  (:import [org.lwjgl.assimp Assimp AINode AIMesh]))
+  (:import [org.lwjgl.assimp Assimp AINode AIMesh]
+           [org.lwjgl BufferUtils]))
 
-(defn process-mesh
-  [mesh scene]
-  (println "foo")
-  )
-
-(defn create-child-nodes
-  [children-pointer-buffer]
-  (loop [result []]
-    (if (.hasRemaining children-pointer-buffer)
-      (recur (conj result (AINode/create (.get children-pointer-buffer))))
-      result)))
-
-(defn process-node
-  [node scene]
-  (when (> (.mNumMeshes node) 0)
-    (println (format "mesh: %d" (.get (.mMeshes node)))))
-  (when (> (.mNumChildren node) 0)
-    (doseq [child-node (create-child-nodes (.mChildren node))]
-      (process-node child-node scene))))
+(defn create-vertex-buffer
+  [mesh]
+  (let [buffer (BufferUtils/createFloatBuffer (* (.mNumVertices mesh) 8))
+        vertices (.mVertices mesh)
+        normals (.mNormals mesh)
+        tex-coords (.mTextureCoords mesh 0)]
+    (doseq [[vertex normal tex-coords]
+            (partition 3 (interleave (take (.mNumVertices mesh) (repeatedly #(.get vertices)))
+                                     (take (.mNumVertices mesh) (repeatedly #(.get normals)))
+                                     (take (.mNumVertices mesh) (repeatedly #(.get tex-coords)))))]
+      (.put buffer (.x vertex))
+      (.put buffer (.y vertex))
+      (.put buffer (.z vertex))
+      (.put buffer (.x normal))
+      (.put buffer (.y normal))
+      (.put buffer (.z normal))
+      (.put buffer (.x tex-coords))
+      (.put buffer (.y tex-coords)))
+    (.flip buffer)))
 
 (defn read-model
-  "read a 3D model from a file"
-  [path]
-  (let [scene (Assimp/aiImportFile path (bit-or Assimp/aiProcess_Triangulate
-                                                Assimp/aiProcess_FlipUVs))]
-    (if (= scene nil)
-      (println (Assimp/aiGetErrorString))
-      (for [index (range (.mNumMeshes scene))]
-        (do
-          (println index)
-          (AIMesh/create (.get (.mMeshes scene) index)))))))
-
-       (comment (( 
-      (let [meshes (.mMeshes scene)]
-        (->> (take (.mNumMeshes scene) (repeatedly #(.get meshes)))
-             (map #(AIMesh/create %))
-             (map #(process-mesh % scene))
-             )))))
+  "Reads a 3D model from a file and returns a vector of AIMesh pointers."
+  [^String path]
+  (if-let [scene (Assimp/aiImportFile path (bit-or Assimp/aiProcess_Triangulate
+                                                   Assimp/aiProcess_FlipUVs))]
+    (mapv (fn [^long index]
+            (let [mesh (AIMesh/create (.get (.mMeshes scene) index))]
+              (create-vertex-buffer mesh)))
+          (range (.mNumMeshes scene)))
+    (throw (ex-info (Assimp/aiGetErrorString) {:path path}))))
