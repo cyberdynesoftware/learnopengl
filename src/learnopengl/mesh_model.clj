@@ -39,7 +39,7 @@
     (println material-pointer)
   ))
 
-(defn read-model
+(defn read-model-new
   "Reads a 3D model from a file and returns a vector of AIMesh pointers."
   [^String path]
   (if-let [scene (Assimp/aiImportFile path (bit-or Assimp/aiProcess_Triangulate
@@ -53,14 +53,14 @@
           (range (.mNumMeshes scene)))
     (throw (ex-info (Assimp/aiGetErrorString) {:path path}))))
 
-(defn read-model-broken
+(defn read-model
   "read a 3D model from a file"
   [path]
   (let [scene (Assimp/aiImportFile path (bit-or Assimp/aiProcess_Triangulate
                                                 Assimp/aiProcess_FlipUVs))]
     (if (= scene nil)
       (println (Assimp/aiGetErrorString))
-      (dorun (for [index (range (.mNumMeshes scene))]
-        (do
-          (println index)
-          (AIMesh/create (.get (.mMeshes scene) index))))))))
+      (for [index (range (.mNumMeshes scene))]
+        (let [pointer (.get (.mMeshes scene) index)]
+          (assert (= (type pointer) java.lang.Long))
+          (AIMesh/create pointer))))))
