@@ -3,7 +3,7 @@
             [learnopengl.input :as input]
             [learnopengl.camera :as camera]
             [learnopengl.mesh-model :as mesh])
-  (:import [org.lwjgl.glfw GLFW]
+  (:import [org.lwjgl.glfw GLFW GLFWFramebufferSizeCallbackI]
            [org.lwjgl.opengl GL GL33]
            [org.lwjgl.system MemoryUtil])
   (:gen-class))
@@ -24,6 +24,12 @@
   (when (= (GLFW/glfwGetKey window GLFW/GLFW_KEY_D) GLFW/GLFW_PRESS)
     (camera/move :right 1 delta)))
 
+(def window-resize-callback
+  (reify GLFWFramebufferSizeCallbackI
+    (invoke [_ _ x y]
+      (reset! camera/aspect (float (/ x y)))
+      (GL33/glViewport (float 0) (float 0) (float x) (float y)))))
+
 (defn -main
   "learnopengl"
   [& args]
@@ -43,6 +49,7 @@
     (GLFW/glfwSetCursorPosCallback window camera/cursor-callback)
     (GLFW/glfwSetScrollCallback window camera/scroll-callback)
     (GLFW/glfwSetKeyCallback window input/key-callback)
+    (GLFW/glfwSetFramebufferSizeCallback window window-resize-callback)
 
     (let [scene (scene/create)]
       (while (not (GLFW/glfwWindowShouldClose window))

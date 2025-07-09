@@ -1,5 +1,5 @@
 (ns learnopengl.mesh-model
-  (:import [org.lwjgl.assimp Assimp AINode AIMesh AIMaterial]
+  (:import [org.lwjgl.assimp Assimp AINode AIMesh AITexture]
            [org.lwjgl BufferUtils]))
 
 (defn create-vertex-buffer
@@ -33,27 +33,30 @@
           (.put buffer index))))))
 
 (defn read-textures
-  [mesh scene]
-  (assert (= (.mMaterialIndex mesh) 1))
-  (let [material-pointer (.get (.mMaterials scene) (.mMaterialIndex mesh))]
-    (println material-pointer)
-  ))
+  [scene]
+  (println (.mNumTextures scene))
+  (let [texture-pointer-buffer (.mTextures scene)]
+    (doseq [texture-pointer (take (.mNumTextures scene) (repeatedly #(.get texture-pointer-buffer)))]
+      (let [texture (AITexture/create ^long texture-pointer)]
+        (println (.mFilename texture))))))
 
-(defn read-model-new
+(defn read-model
   "Reads a 3D model from a file and returns a vector of AIMesh pointers."
   [^String path]
   (if-let [scene (Assimp/aiImportFile path (bit-or Assimp/aiProcess_Triangulate
                                                    Assimp/aiProcess_FlipUVs))]
-    (mapv (fn [^long index]
-            (let [mesh (AIMesh/create (.get (.mMeshes scene) index))]
-              (println "reading mesh")
-              ;(create-vertex-buffer mesh)
-              ;(create-index-buffer mesh)
-              (read-textures mesh scene)))
-          (range (.mNumMeshes scene)))
+    (do
+      (mapv (fn [^long index]
+              (let [mesh (AIMesh/create (.get (.mMeshes scene) index))]
+                ;(println "reading mesh")
+                ;(create-vertex-buffer mesh)
+                ;(create-index-buffer mesh)))
+                ))
+            (range (.mNumMeshes scene)))
+      (println (read-textures scene)))
     (throw (ex-info (Assimp/aiGetErrorString) {:path path}))))
 
-(defn read-model
+(defn read-model-old
   "read a 3D model from a file"
   [path]
   (let [scene (Assimp/aiImportFile path (bit-or Assimp/aiProcess_Triangulate
@@ -63,4 +66,4 @@
       (for [index (range (.mNumMeshes scene))]
         (let [pointer (.get (.mMeshes scene) index)]
           (assert (= (type pointer) java.lang.Long))
-          (AIMesh/create pointer))))))
+          (AIMesh/create ^long pointer))))))

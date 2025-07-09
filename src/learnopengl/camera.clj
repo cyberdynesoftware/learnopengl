@@ -87,7 +87,8 @@
                       %))))))
 
 (def perspective-matrix (new Matrix4f))
+(def aspect (atom (float (/ 4 3))))
 
 (defn perspective
   []
-  (.setPerspective perspective-matrix (float @fov) (float (/ 4 3)) (float 0.1) (float 100)))
+  (.setPerspective perspective-matrix (float @fov) @aspect (float 0.1) (float 100)))
