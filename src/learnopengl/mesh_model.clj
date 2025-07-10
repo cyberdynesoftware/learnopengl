@@ -32,28 +32,55 @@
         (doseq [index (take (.mNumIndices face) (repeatedly #(.get indices)))]
           (.put buffer index))))))
 
-(defn read-textures
-  [scene]
-  (println (.mNumTextures scene))
+(defn read-material
+  [mesh scene]
   (let [texture-pointer-buffer (.mTextures scene)]
-    (doseq [texture-pointer (take (.mNumTextures scene) (repeatedly #(.get texture-pointer-buffer)))]
+    (doseq [texture-pointer (take (.mNumTextures scene)
+                                  (repeatedly #(.get texture-pointer-buffer)))]
       (let [texture (AITexture/create ^long texture-pointer)]
-        (println (.mFilename texture))))))
+        (println (format "texture: %s" (.mFilename texture)))))))
+
+(defn read-textures
+  [mesh scene]
+  (println (format "material-index: %d" (.mMaterialIndex mesh))))
+
+(def model
+  {:vertices []
+   :indices []
+   :materials #{}})
+
+(defn read-scene
+  [scene]
+  ;(println (format "#textures: %d" (.mNumTextures scene)))
+  ;(println (format "#materials: %d" (.mNumMaterials scene)))
+  (let [mesh-pointer-buffer (.mMeshes scene)
+        result (reduce (fn [model mesh-pointer]
+                         (let [mesh (AIMesh/create ^long mesh-pointer)]
+                           ;(conj (:indices model) (create-index-buffer mesh))
+                           (update-in model
+                                      [:materials]
+                                      #(conj % (.mMaterialIndex mesh)))))
+                       model
+                       (take (.mNumMeshes scene)
+                             (repeatedly #(.get mesh-pointer-buffer))))]
+    (println (:materials result)))
+
+  (comment
+    (mapv (fn [^long index]
+            (let [mesh (AIMesh/create (.get (.mMeshes scene) index))]
+              ;(println "reading mesh")
+              ;(create-vertex-buffer mesh)
+              ;(create-index-buffer mesh)))
+              ))
+          (range (.mNumMeshes scene)))
+    (println (read-materials scene))))
 
 (defn read-model
   "Reads a 3D model from a file and returns a vector of AIMesh pointers."
   [^String path]
   (if-let [scene (Assimp/aiImportFile path (bit-or Assimp/aiProcess_Triangulate
                                                    Assimp/aiProcess_FlipUVs))]
-    (do
-      (mapv (fn [^long index]
-              (let [mesh (AIMesh/create (.get (.mMeshes scene) index))]
-                ;(println "reading mesh")
-                ;(create-vertex-buffer mesh)
-                ;(create-index-buffer mesh)))
-                ))
-            (range (.mNumMeshes scene)))
-      (println (read-textures scene)))
+    (read-scene scene)
     (throw (ex-info (Assimp/aiGetErrorString) {:path path}))))
 
 (defn read-model-old
