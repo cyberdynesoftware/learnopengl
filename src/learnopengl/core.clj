@@ -8,8 +8,12 @@
            [org.lwjgl.system MemoryUtil])
   (:gen-class))
 
-(def foo (atom (mesh/read-model "resources/assets/backpack/backpack.obj")))
-(println (count @foo))
+(defn foo
+  []
+  (let [model (mesh/read-model "resources/assets/backpack/backpack.obj")]
+    (println (:textures model))))
+
+(foo)
 
 (def last-frame (atom 0))
 
