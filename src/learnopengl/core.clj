@@ -11,6 +11,8 @@
 (defn foo
   []
   (let [model (mesh/read-model "resources/assets/backpack/backpack.obj")]
+    (println (format "#vertices: %d" (count (:vertices model))))
+    (println (format "#indices: %d" (count (:indices model))))
     (println (:textures model))))
 
 (foo)

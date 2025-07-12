@@ -32,10 +32,6 @@
         (doseq [index (take (.mNumIndices face) (repeatedly #(.get indices)))]
           (.put buffer index))))))
 
-(defn read-textures
-  [mesh scene]
-  (println (format "material-index: %d" (.mMaterialIndex mesh))))
-
 (def model
   {:vertices []
    :indices []
@@ -55,39 +51,43 @@
 
 (defn read-texture-name
   [material-indices scene]
-  (for [material-index material-indices]
-    (let [material-pointer (.get (.mMaterials scene) material-index)
-          material (AIMaterial/create ^long material-pointer)]
-      (for [texture-type texture-types]
-        (let [texture-count (Assimp/aiGetMaterialTextureCount material (:type texture-type))
-              path (AIString/create)]
-          (when (> texture-count 0)
-            (assert (= texture-count (:num-expected texture-type))
-                    (format "unexpected texture count: %d for %s"
-                            texture-count
-                            (:pkey texture-type)))
-            (Assimp/aiGetMaterialTexture material
-                                        (:type texture-type)
-                                        0
-                                        path
-                                        nil nil nil nil nil nil)
-            (.dataString path)))))))
+  (assert (= (count material-indices) 1)
+          "single material index expected")
+  (let [material-pointer (.get (.mMaterials scene) (first material-indices))
+        material (AIMaterial/create ^long material-pointer)]
+    (for [texture-type texture-types]
+      (let [texture-count (Assimp/aiGetMaterialTextureCount material (:type texture-type))
+            path (AIString/create)]
+        (when (> texture-count 0)
+          (assert (= texture-count (:num-expected texture-type))
+                  (format "unexpected texture count: %d for %s"
+                          texture-count
+                          (:pkey texture-type)))
+          (Assimp/aiGetMaterialTexture material
+                                       (:type texture-type)
+                                       0
+                                       path
+                                       nil nil nil nil nil nil)
+          (.dataString path))))))
 
 (defn read-scene
   [scene]
-  ;(println (format "#textures: %d" (.mNumTextures scene)))
-  ;(println (format "#materials: %d" (.mNumMaterials scene)))
   (let [mesh-pointer-buffer (.mMeshes scene)
         result (reduce (fn [model mesh-pointer]
                          (let [mesh (AIMesh/create ^long mesh-pointer)]
                            (-> model
-                               ;(conj (:indices model) (create-index-buffer mesh))
+                               (update-in [:vertices]
+                                          #(conj % (create-vertex-buffer mesh)))
+                               (update-in [:indices]
+                                          #(conj % (create-index-buffer mesh)))
                                (update-in [:material-indices]
                                           #(conj % (.mMaterialIndex mesh))))))
                        model
                        (take (.mNumMeshes scene)
                              (repeatedly #(.get mesh-pointer-buffer))))]
-    (assoc-in result [:textures] (read-texture-name (:material-indices result) scene))))
+    (assoc-in result
+              [:textures]
+              (filterv identity (read-texture-name (:material-indices result) scene)))))
 
 (defn read-model
   "Reads a 3D model from a file and returns a vector of AIMesh pointers."
@@ -96,15 +96,3 @@
                                                    Assimp/aiProcess_FlipUVs))]
     (read-scene scene)
     (throw (ex-info (Assimp/aiGetErrorString) {:path path}))))
-
-(defn read-model-old
-  "read a 3D model from a file"
-  [path]
-  (let [scene (Assimp/aiImportFile path (bit-or Assimp/aiProcess_Triangulate
-                                                Assimp/aiProcess_FlipUVs))]
-    (if (= scene nil)
-      (println (Assimp/aiGetErrorString))
-      (for [index (range (.mNumMeshes scene))]
-        (let [pointer (.get (.mMeshes scene) index)]
-          (assert (= (type pointer) java.lang.Long))
-          (AIMesh/create ^long pointer))))))
