@@ -39,14 +39,11 @@
    :textures []})
 
 (def texture-types 
-  [{:pkey Assimp/AI_MATKEY_COLOR_AMBIENT
-    :type Assimp/aiTextureType_AMBIENT
+  [{:type Assimp/aiTextureType_AMBIENT
     :num-expected 1}
-   {:pkey Assimp/AI_MATKEY_NAME
-    :type Assimp/aiTextureType_DIFFUSE
+   {:type Assimp/aiTextureType_DIFFUSE
     :num-expected 1}
-   {:pkey Assimp/AI_MATKEY_COLOR_SPECULAR
-    :type Assimp/aiTextureType_SPECULAR
+   {:type Assimp/aiTextureType_SPECULAR
     :num-expected 1}])
 
 (defn read-texture-name
@@ -60,14 +57,14 @@
             path (AIString/create)]
         (when (> texture-count 0)
           (assert (= texture-count (:num-expected texture-type))
-                  (format "unexpected texture count: %d for %s"
+                  (format "unexpected texture count: %d for %d"
                           texture-count
-                          (:pkey texture-type)))
-          (Assimp/aiGetMaterialTexture material
-                                       (:type texture-type)
-                                       0
-                                       path
-                                       nil nil nil nil nil nil)
+                          (:type texture-type)))
+          (Assimp/aiGetMaterialString material
+                                      Assimp/_AI_MATKEY_TEXTURE_BASE
+                                      (:type texture-type)
+                                      0
+                                      path)
           (.dataString path))))))
 
 (defn read-scene
@@ -76,12 +73,9 @@
         result (reduce (fn [model mesh-pointer]
                          (let [mesh (AIMesh/create ^long mesh-pointer)]
                            (-> model
-                               (update-in [:vertices]
-                                          #(conj % (create-vertex-buffer mesh)))
-                               (update-in [:indices]
-                                          #(conj % (create-index-buffer mesh)))
-                               (update-in [:material-indices]
-                                          #(conj % (.mMaterialIndex mesh))))))
+                               ;(update-in [:vertices] #(conj % (create-vertex-buffer mesh)))
+                               ;(update-in [:indices] #(conj % (create-index-buffer mesh)))
+                               (update-in [:material-indices] #(conj % (.mMaterialIndex mesh))))))
                        model
                        (take (.mNumMeshes scene)
                              (repeatedly #(.get mesh-pointer-buffer))))]
@@ -90,7 +84,7 @@
               (filterv identity (read-texture-name (:material-indices result) scene)))))
 
 (defn read-model
-  "Reads a 3D model from a file and returns a vector of AIMesh pointers."
+  "Reads a 3D model from a file."
   [^String path]
   (if-let [scene (Assimp/aiImportFile path (bit-or Assimp/aiProcess_Triangulate
                                                    Assimp/aiProcess_FlipUVs))]
