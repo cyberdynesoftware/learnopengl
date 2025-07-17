@@ -29,6 +29,27 @@
     (GL33/glEnableVertexAttribArray 2)
     vao))
 
+(defn load-vertices-and-indices
+  [vertex-buffer index-buffer]
+  (let [vbo (GL33/glGenBuffers)
+        vao (GL33/glGenVertexArrays)
+        ebo (GL33/glGenBuffers)]
+    (GL33/glBindVertexArray vao)
+
+    (GL33/glBindBuffer GL33/GL_ARRAY_BUFFER vbo)
+    (GL33/glBufferData GL33/GL_ARRAY_BUFFER vertex-buffer GL33/GL_STATIC_DRAW)
+
+    (GL33/glBindBuffer GL33/GL_ELEMENT_ARRAY_BUFFER ebo)
+    (GL33/glBufferData GL33/GL_ELEMENT_ARRAY_BUFFER index-buffer GL33/GL_STATIC_DRAW)
+
+    (GL33/glVertexAttribPointer 0 3 GL33/GL_FLOAT false 32 0)
+    (GL33/glEnableVertexAttribArray 0)
+    (GL33/glVertexAttribPointer 1 3 GL33/GL_FLOAT false 32 12)
+    (GL33/glEnableVertexAttribArray 1)
+    (GL33/glVertexAttribPointer 2 2 GL33/GL_FLOAT false 32 24)
+    (GL33/glEnableVertexAttribArray 2)
+    vao))
+
 (defn load-texture
   [path]
   (STBImage/stbi_set_flip_vertically_on_load true)

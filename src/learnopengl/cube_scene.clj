@@ -1,4 +1,4 @@
-(ns learnopengl.scene
+(ns learnopengl.cube-scene
   (:require [learnopengl.shader :as shader]
             [learnopengl.model-data :as data]
             [learnopengl.camera :as camera]

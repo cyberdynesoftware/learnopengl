@@ -1,5 +1,5 @@
 (ns learnopengl.core
-  (:require [learnopengl.scene :as scene]
+  (:require [learnopengl.model-scene :as scene]
             [learnopengl.input :as input]
             [learnopengl.camera :as camera]
             [learnopengl.mesh-model :as mesh])
@@ -14,8 +14,6 @@
     (println (format "#vertices: %d" (count (:vertices model))))
     (println (format "#indices: %d" (count (:indices model))))
     (println (:textures model))))
-
-(foo)
 
 (def last-frame (atom 0))
 

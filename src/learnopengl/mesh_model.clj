@@ -30,7 +30,8 @@
       (assert (= (.mNumIndices face) 3))
       (let [indices (.mIndices face)]
         (doseq [index (take (.mNumIndices face) (repeatedly #(.get indices)))]
-          (.put buffer index))))))
+          (.put buffer index))))
+    (.flip buffer)))
 
 (def model
   {:vertices []
@@ -73,8 +74,8 @@
         result (reduce (fn [model mesh-pointer]
                          (let [mesh (AIMesh/create ^long mesh-pointer)]
                            (-> model
-                               ;(update-in [:vertices] #(conj % (create-vertex-buffer mesh)))
-                               ;(update-in [:indices] #(conj % (create-index-buffer mesh)))
+                               (update-in [:vertices] #(conj % (create-vertex-buffer mesh)))
+                               (update-in [:indices] #(conj % (create-index-buffer mesh)))
                                (update-in [:material-indices] #(conj % (.mMaterialIndex mesh))))))
                        model
                        (take (.mNumMeshes scene)
