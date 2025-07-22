@@ -16,10 +16,10 @@
 
 (defn load-model
   [asset]
-  (mapv (fn [[vertex-buffer index-buffer]]
-          {:vao (ogl/load-vertices-and-indices vertex-buffer index-buffer)
-           :index-count (.capacity index-buffer)})
-        (partition 2 (interleave (:vertices asset) (:indices asset)))))
+  (mapv (fn [mesh]
+          {:vao (ogl/load-vertices-and-indices (:vertices mesh) (:indices mesh))
+           :index-count (.capacity (:indices mesh))})
+        (:meshes asset)))
 
 (defn create
   []

@@ -68,8 +68,33 @@
                                       path)
           (.dataString path))))))
 
-(defn read-scene
+(defn process-mesh
+  [pointer]
+  (let [mesh (AIMesh/create ^long pointer)]
+    {:vertices (create-vertex-buffer mesh)
+     :indices (create-index-buffer mesh)
+     :material-index (.mMaterialIndex mesh)}))
+
+(defn process-scene
+  "Elapsed time: 169414.953504 msecs (map)"
+  "Elapsed time: 100878.453195 msecs (pmap)"
   [scene]
+  (time
+    (let [mesh-pointer-buffer (.mMeshes scene)
+          meshes (->> (take (.mNumMeshes scene)
+                            (repeatedly #(.get mesh-pointer-buffer)))
+                      (pmap process-mesh))
+          material-indices (reduce (fn [result mesh]
+                                     (conj result (:material-index mesh)))
+                                   #{}
+                                   meshes)]
+      {:meshes meshes
+       :textures (filterv identity (read-texture-name material-indices scene))})))
+
+(defn read-scene
+  "Elapsed time: 169436.385394 msecs"
+  [scene]
+  (time
   (let [mesh-pointer-buffer (.mMeshes scene)
         result (reduce (fn [model mesh-pointer]
                          (let [mesh (AIMesh/create ^long mesh-pointer)]
@@ -80,14 +105,14 @@
                        model
                        (take (.mNumMeshes scene)
                              (repeatedly #(.get mesh-pointer-buffer))))]
-    (assoc-in result
-              [:textures]
-              (filterv identity (read-texture-name (:material-indices result) scene)))))
+    (assoc result
+           :textures
+           (filterv identity (read-texture-name (:material-indices result) scene))))))
 
 (defn read-model
   "Reads a 3D model from a file."
   [^String path]
   (if-let [scene (Assimp/aiImportFile path (bit-or Assimp/aiProcess_Triangulate
                                                    Assimp/aiProcess_FlipUVs))]
-    (read-scene scene)
+    (process-scene scene)
     (throw (ex-info (Assimp/aiGetErrorString) {:path path}))))
