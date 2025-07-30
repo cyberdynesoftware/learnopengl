@@ -77,7 +77,7 @@
 
 (defn process-scene
   "Elapsed time: 169414.953504 msecs (map)"
-  "Elapsed time: 100878.453195 msecs (pmap)"
+  ;"Elapsed time: 100878.453195 msecs (pmap)"
   [scene]
   (time
     (let [mesh-pointer-buffer (.mMeshes scene)

@@ -45,6 +45,7 @@
   (let [window (GLFW/glfwCreateWindow (int 400) (int 300) "learnopengl" MemoryUtil/NULL MemoryUtil/NULL)]
     (GLFW/glfwMakeContextCurrent window)
     (GL/createCapabilities)
+    (println (format "OpenGL version: %s (%s)" (GL33/glGetString GL33/GL_VERSION) (GL33/glGetString GL33/GL_VENDOR)))
 
     (GL33/glEnable GL33/GL_DEPTH_TEST)
     (GLFW/glfwSetInputMode window GLFW/GLFW_CURSOR GLFW/GLFW_CURSOR_DISABLED)
@@ -66,6 +67,10 @@
           (GL33/glClear (bit-or GL33/GL_COLOR_BUFFER_BIT GL33/GL_DEPTH_BUFFER_BIT))
 
           (scene/render scene delta)
+
+          (let [error-code (GL33/glGetError)]
+            (when (not= error-code GL33/GL_NO_ERROR)
+              (println (format "OpenGL error: %d" error-code))))
 
           (GLFW/glfwSwapBuffers window)
           (GLFW/glfwPollEvents)))))
