@@ -1,26 +1,47 @@
 (ns learnopengl.model-loader
+  (:require [learnopengl.error :as error])
   (:import [org.lwjgl.opengl GL33]
            [org.lwjgl.assimp Assimp AINode AIMesh AITexture AIMaterial AIString]
+           [org.lwjgl.system MemoryUtil]
            [org.lwjgl BufferUtils]))
 
 (defn new-mesh
   [indices-count material-index]
   {:vbo (GL33/glGenBuffers)
-   :ebo (GL33/glGenVertexArrays)
-   :vao (GL33/glGenBuffers)
+   :vao (GL33/glGenVertexArrays)
+   :ebo (GL33/glGenBuffers)
    :indices-count indices-count
    :material-index material-index})
+
+(defn copy-to-float-buffer
+  [vertices number dim]
+  (let [buffer (BufferUtils/createFloatBuffer (* number dim))]
+    (doseq [vertex (take number (repeatedly #(.get vertices)))]
+      (.put buffer (.x vertex))
+      (.put buffer (.y vertex))
+      (when (= dim 3)
+        (.put buffer (.z vertex))))
+    (.flip buffer)))
+
+(defn mem-to-float-buffer
+  [buffer size]
+  (.flip (MemoryUtil/memFloatBuffer (.address0 buffer) size)))
+
 
 (defn load-batched-vertex-data
   [aimesh vbo]
   (GL33/glBindBuffer GL33/GL_ARRAY_BUFFER vbo)
   (let [vertices-size (* (.mNumVertices aimesh) 12)
-        tex-coords-size (* (.mNumVertices aimesh) 8)]
+        tex-coords-size (* (.mNumVertices aimesh) 8)
+        vertices (mem-to-float-buffer (.mVertices aimesh) vertices-size)
+        normals (mem-to-float-buffer (.mNormals aimesh) vertices-size)
+        tex-coords (mem-to-float-buffer (.mTextureCoords aimesh 0) tex-coords-size)]
     (GL33/glBufferData GL33/GL_ARRAY_BUFFER (+ (* vertices-size 2) tex-coords-size) GL33/GL_STATIC_DRAW)
 
-    (GL33/nglBufferSubData GL33/GL_ARRAY_BUFFER 0 vertices-size (.address0 (.mVertices aimesh)))
-    (GL33/nglBufferSubData GL33/GL_ARRAY_BUFFER vertices-size vertices-size (.address0 (.mNormals aimesh)))
-    (GL33/nglBufferSubData GL33/GL_ARRAY_BUFFER (* vertices-size 2) tex-coords-size (.address0 (.mTextureCoords aimesh 0)))
+    (GL33/glBufferSubData GL33/GL_ARRAY_BUFFER 0 vertices)
+    (error/check-error)
+    (GL33/glBufferSubData GL33/GL_ARRAY_BUFFER vertices-size normals)
+    (GL33/glBufferSubData GL33/GL_ARRAY_BUFFER (* vertices-size 2) tex-coords)
 
     (GL33/glVertexAttribPointer 0 3 GL33/GL_FLOAT false 12 0)
     (GL33/glEnableVertexAttribArray 0)
@@ -52,6 +73,7 @@
 (defn load-indices
   [aimesh ebo]
   (GL33/glBindBuffer GL33/GL_ELEMENT_ARRAY_BUFFER ebo)
+  (GL33/glBufferData GL33/GL_ELEMENT_ARRAY_BUFFER (* (.mNumFaces aimesh) 12) GL33/GL_STATIC_DRAW)
   (doseq [index (range (.mNumFaces aimesh))]
     (let [face (.get (.mFaces aimesh) index)]
       (assert (= (.mNumIndices face) 3))
@@ -105,6 +127,7 @@
     (GL33/glBindVertexArray (:vao mesh))
     (load-batched-vertex-data aimesh (:vbo mesh))
     (load-indices aimesh (:ebo mesh))
+    ;(error/check-error)
     mesh))
 
 (defn material-indices

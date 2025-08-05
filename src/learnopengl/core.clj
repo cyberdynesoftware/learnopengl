@@ -1,9 +1,11 @@
 (ns learnopengl.core
   (:require [learnopengl.model-scene :as scene]
+            [learnopengl.error :as error]
             [learnopengl.input :as input]
             [learnopengl.camera :as camera]
             [learnopengl.mesh-model :as mesh])
   (:import [org.lwjgl.glfw GLFW GLFWFramebufferSizeCallbackI]
+           [main.java ModelLoader]
            [org.lwjgl.opengl GL GL33]
            [org.lwjgl.system MemoryUtil])
   (:gen-class))
@@ -14,6 +16,8 @@
     (println (format "#vertices: %d" (count (:vertices model))))
     (println (format "#indices: %d" (count (:indices model))))
     (println (:textures model))))
+
+(ModelLoader/foo)
 
 (def last-frame (atom 0))
 
@@ -68,9 +72,7 @@
 
           (scene/render scene delta)
 
-          (let [error-code (GL33/glGetError)]
-            (when (not= error-code GL33/GL_NO_ERROR)
-              (println (format "OpenGL error: %d" error-code))))
+          (error/check-error)
 
           (GLFW/glfwSwapBuffers window)
           (GLFW/glfwPollEvents)))))

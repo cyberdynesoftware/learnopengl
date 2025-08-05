@@ -15,6 +15,7 @@
                  [org.lwjgl/lwjgl-assimp "3.3.6"]
                  [org.lwjgl/lwjgl-assimp "3.3.6" :classifier "natives-linux"]
                  [org.joml/joml "1.10.8"]]
+  :java-source-paths ["src/main"]
   :main ^:skip-aot learnopengl.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all
