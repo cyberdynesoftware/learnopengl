@@ -5,7 +5,6 @@
             [learnopengl.camera :as camera]
             [learnopengl.mesh-model :as mesh])
   (:import [org.lwjgl.glfw GLFW GLFWFramebufferSizeCallbackI]
-           [main.java ModelLoader]
            [org.lwjgl.opengl GL GL33]
            [org.lwjgl.system MemoryUtil])
   (:gen-class))
@@ -16,8 +15,6 @@
     (println (format "#vertices: %d" (count (:vertices model))))
     (println (format "#indices: %d" (count (:indices model))))
     (println (:textures model))))
-
-(ModelLoader/foo)
 
 (def last-frame (atom 0))
 

@@ -1,9 +1,13 @@
 (ns learnopengl.model-loader
   (:require [learnopengl.error :as error])
   (:import [org.lwjgl.opengl GL33]
-           [org.lwjgl.assimp Assimp AINode AIMesh AITexture AIMaterial AIString]
+           [main.java ModelLoader]
+           [org.lwjgl.assimp Assimp AIScene AINode AIMesh AITexture AIMaterial AIString AIVector3D AIVector3D$Buffer AIFace AIFace$Buffer]
            [org.lwjgl.system MemoryUtil]
-           [org.lwjgl BufferUtils]))
+           [java.nio FloatBuffer IntBuffer]
+           [org.lwjgl BufferUtils PointerBuffer]))
+
+(set! *warn-on-reflection* true)
 
 (defn new-mesh
   [indices-count material-index]
@@ -13,7 +17,7 @@
    :indices-count indices-count
    :material-index material-index})
 
-(defn copy-to-float-buffer
+(comment copy-to-float-buffer
   [vertices number dim]
   (let [buffer (BufferUtils/createFloatBuffer (* number dim))]
     (doseq [vertex (take number (repeatedly #(.get vertices)))]
@@ -23,12 +27,41 @@
         (.put buffer (.z vertex))))
     (.flip buffer)))
 
-(defn mem-to-float-buffer
+(comment mem-to-float-buffer
   [buffer size]
   (.flip (MemoryUtil/memFloatBuffer (.address0 buffer) size)))
 
+(defn create-vertex-buffer
+  [^AIMesh mesh]
+  (let [buffer (BufferUtils/createFloatBuffer (* ^int (.mNumVertices mesh) 8))]
+    (dotimes [index ^int (.mNumVertices mesh)]
+      (let [vertex ^AIVector3D (.get ^AIVector3D$Buffer (.mVertices mesh) index)
+            normal ^AIVector3D (.get ^AIVector3D$Buffer (.mNormals mesh) index)
+            tex-coords ^AIVector3D (.get ^AIVector3D$Buffer (.mTextureCoords mesh 0) index)]
+        (.put buffer ^float (.x vertex))
+        (.put buffer ^float (.y vertex))
+        (.put buffer ^float (.z vertex))
+        (.put buffer ^float (.x normal))
+        (.put buffer ^float (.y normal))
+        (.put buffer ^float (.z normal))
+        (.put buffer ^float (.x tex-coords))
+        (.put buffer ^float (.y tex-coords))))
+    (.flip buffer)))
 
-(defn load-batched-vertex-data
+(defn load-interleaved-vertex-data
+  [aimesh vbo]
+  (GL33/glBindBuffer GL33/GL_ARRAY_BUFFER vbo)
+  (let [buffer ^FloatBuffer (create-vertex-buffer aimesh)]
+    (GL33/glBufferData GL33/GL_ARRAY_BUFFER buffer GL33/GL_STATIC_DRAW)
+
+    (GL33/glVertexAttribPointer 0 3 GL33/GL_FLOAT false 32 0)
+    (GL33/glEnableVertexAttribArray 0)
+    (GL33/glVertexAttribPointer 1 3 GL33/GL_FLOAT false 32 12)
+    (GL33/glEnableVertexAttribArray 1)
+    (GL33/glVertexAttribPointer 2 2 GL33/GL_FLOAT false 32 24)
+    (GL33/glEnableVertexAttribArray 2)))
+
+(comment load-batched-vertex-data
   [aimesh vbo]
   (GL33/glBindBuffer GL33/GL_ARRAY_BUFFER vbo)
   (let [vertices-size (* (.mNumVertices aimesh) 12)
@@ -39,7 +72,6 @@
     (GL33/glBufferData GL33/GL_ARRAY_BUFFER (+ (* vertices-size 2) tex-coords-size) GL33/GL_STATIC_DRAW)
 
     (GL33/glBufferSubData GL33/GL_ARRAY_BUFFER 0 vertices)
-    (error/check-error)
     (GL33/glBufferSubData GL33/GL_ARRAY_BUFFER vertices-size normals)
     (GL33/glBufferSubData GL33/GL_ARRAY_BUFFER (* vertices-size 2) tex-coords)
 
@@ -50,45 +82,22 @@
     (GL33/glVertexAttribPointer 2 2 GL33/GL_FLOAT false 8 (* vertices-size 2))
     (GL33/glEnableVertexAttribArray 2)))
 
-(defn create-vertex-buffer
-  [mesh]
-  (let [buffer (BufferUtils/createFloatBuffer (* (.mNumVertices mesh) 8))
-        vertices (.mVertices mesh)
-        normals (.mNormals mesh)
-        tex-coords (.mTextureCoords mesh 0)]
-    (doseq [[vertex normal tex-coords]
-            (partition 3 (interleave (take (.mNumVertices mesh) (repeatedly #(.get vertices)))
-                                     (take (.mNumVertices mesh) (repeatedly #(.get normals)))
-                                     (take (.mNumVertices mesh) (repeatedly #(.get tex-coords)))))]
-      (.put buffer (.x vertex))
-      (.put buffer (.y vertex))
-      (.put buffer (.z vertex))
-      (.put buffer (.x normal))
-      (.put buffer (.y normal))
-      (.put buffer (.z normal))
-      (.put buffer (.x tex-coords))
-      (.put buffer (.y tex-coords)))
+(defn create-index-buffer
+  [^AIMesh mesh]
+  (let [buffer (BufferUtils/createIntBuffer (* ^int (.mNumFaces mesh) 3))
+        faces ^AIFace$Buffer (.mFaces mesh)]
+    (doseq [^AIFace face (take ^int (.mNumFaces mesh) (repeatedly #(.get faces)))]
+      (assert (= ^int (.mNumIndices face) 3))
+      (let [indices ^IntBuffer (.mIndices face)]
+        (doseq [^int index (take ^int (.mNumIndices face) (repeatedly #(.get indices)))]
+          (.put buffer index))))
     (.flip buffer)))
 
 (defn load-indices
-  [aimesh ebo]
+  [^AIMesh aimesh ebo]
   (GL33/glBindBuffer GL33/GL_ELEMENT_ARRAY_BUFFER ebo)
-  (GL33/glBufferData GL33/GL_ELEMENT_ARRAY_BUFFER (* (.mNumFaces aimesh) 12) GL33/GL_STATIC_DRAW)
-  (doseq [index (range (.mNumFaces aimesh))]
-    (let [face (.get (.mFaces aimesh) index)]
-      (assert (= (.mNumIndices face) 3))
-      (GL33/glBufferSubData GL33/GL_ELEMENT_ARRAY_BUFFER (* index 12) (.mIndices face)))))
-
-(defn create-index-buffer
-  [mesh]
-  (let [buffer (BufferUtils/createIntBuffer (* (.mNumFaces mesh) 3))
-        faces (.mFaces mesh)]
-    (doseq [face (take (.mNumFaces mesh) (repeatedly #(.get faces)))]
-      (assert (= (.mNumIndices face) 3))
-      (let [indices (.mIndices face)]
-        (doseq [index (take (.mNumIndices face) (repeatedly #(.get indices)))]
-          (.put buffer index))))
-    (.flip buffer)))
+  (let [^IntBuffer buffer (create-index-buffer aimesh)]
+    (GL33/glBufferData GL33/GL_ELEMENT_ARRAY_BUFFER buffer GL33/GL_STATIC_DRAW)))
 
 (def texture-types 
   [{:type Assimp/aiTextureType_AMBIENT
@@ -125,7 +134,7 @@
         mesh (new-mesh (* (.mNumFaces aimesh) 3)
                        (.mMaterialIndex aimesh))]
     (GL33/glBindVertexArray (:vao mesh))
-    (load-batched-vertex-data aimesh (:vbo mesh))
+    (load-interleaved-vertex-data aimesh (:vbo mesh))
     (load-indices aimesh (:ebo mesh))
     ;(error/check-error)
     mesh))
@@ -138,9 +147,9 @@
           meshes))
 
 (defn process-scene
-  [scene]
-  (let [mesh-pointer-buffer (.mMeshes scene)
-        meshes (->> (take (.mNumMeshes scene)
+  [^AIScene scene]
+  (let [mesh-pointer-buffer ^PointerBuffer (.mMeshes scene)
+        meshes (->> (take ^int (.mNumMeshes scene)
                           (repeatedly #(.get mesh-pointer-buffer)))
                     (mapv process-mesh))]
     {:meshes meshes
