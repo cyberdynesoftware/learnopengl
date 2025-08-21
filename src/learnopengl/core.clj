@@ -2,21 +2,12 @@
   (:require [learnopengl.model-scene :as scene]
             [learnopengl.error :as error]
             [learnopengl.input :as input]
-            [learnopengl.camera :as camera]
-            [learnopengl.mesh-model :as mesh])
+            [learnopengl.gui-scene :as gui]
+            [learnopengl.camera :as camera])
   (:import [org.lwjgl.glfw GLFW GLFWFramebufferSizeCallbackI]
            [org.lwjgl.opengl GL GL33]
            [org.lwjgl.system MemoryUtil])
   (:gen-class))
-
-(defn foo
-  []
-  (let [model (mesh/read-model "resources/assets/backpack/backpack.obj")]
-    (println (format "#vertices: %d" (count (:vertices model))))
-    (println (format "#indices: %d" (count (:indices model))))
-    (println (:textures model))))
-
-(def last-frame (atom 0))
 
 (defn move-camera
   [window delta]
@@ -57,7 +48,9 @@
     (GLFW/glfwSetKeyCallback window input/key-callback)
     (GLFW/glfwSetFramebufferSizeCallback window window-resize-callback)
 
-    (let [scene (scene/create)]
+    (let [scene (scene/create)
+          gui (gui/create)
+          last-frame (atom 0)]
       (while (not (GLFW/glfwWindowShouldClose window))
         (let [now (GLFW/glfwGetTime)
               delta (- now @last-frame)]
@@ -68,6 +61,7 @@
           (GL33/glClear (bit-or GL33/GL_COLOR_BUFFER_BIT GL33/GL_DEPTH_BUFFER_BIT))
 
           (scene/render scene delta)
+          (gui/render gui delta)
 
           (error/check-error)
 
