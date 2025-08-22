@@ -1,4 +1,5 @@
 (ns learnopengl.gui-scene
+  (:require [learnopengl.shader :as shader])
   (:import [org.lwjgl.util.freetype FreeType FT_Face]
            [org.lwjgl.opengl GL33]
            [org.lwjgl BufferUtils]))
@@ -43,24 +44,54 @@
 (defn create
   []
   (GL33/glPixelStorei GL33/GL_UNPACK_ALIGNMENT 1)
-  (let [face (load-face "resources/arial.ttf")]
-    (->> (range 128)
-         (map (fn [c]
-                (load-char face c)
-                (let [width (.. face (glyph) (bitmap) (width))
-                      height (.. face (glyph) (bitmap) (rows))
-                      bitmap (.. face (glyph) (bitmap) (buffer height (.. face (glyph) (bitmap) (pitch))))]
-                  {:texture (load-texture bitmap width height)
-                   :width width
-                   :height height
-                   :bitmap-left (.. face (glyph) (bitmap_left))
-                   :bitmap-top (.. face (glyph) (bitmap_top))
-                   :advance (.. face (glyph) (advance) (x))}))))
+  {:font (let [face (load-face "resources/arial.ttf")]
+           (FreeType/FT_Set_Pixel_Sizes face 0 48)
+           (println (.num_glyphs face))
+           (->> (range 128)
+                (mapv (fn [c]
+                        (load-char face c)
+                        (let [width (.. face (glyph) (bitmap) (width))
+                              height (.. face (glyph) (bitmap) (rows))
+                              pitch (.. face (glyph) (bitmap) (pitch))
+                              bitmap (.. face (glyph) (bitmap) (buffer (* height pitch)))]
+                          {:texture (load-texture bitmap width height)
+                           :width width
+                           :height height
+                           :bearing-left (.. face (glyph) (bitmap_left))
+                           :bearing-top (.. face (glyph) (bitmap_top))
+                           :advance (.. face (glyph) (advance) (x))})))))
+   :shader (shader/get-shader-program
+             (slurp "resources/shaders/text.vert")
+             (slurp "resources/shaders/text.frag"))
+   :buffer (let [vbo (GL33/glGenBuffers)
+                 vao (GL33/glGenVertexArrays)]
+             (GL33/glBindVertexArray vao)
+             (GL33/glBindBuffer GL33/GL_ARRAY_BUFFER vbo)
+             (GL33/glBufferData GL33/GL_ARRAY_BUFFER (* 4 24) GL33/GL_DYNAMIC_DRAW)
+             (GL33/glEnableVertexAttribArray 0)
+             (GL33/glVertexAttribPointer 0 4 GL33/GL_FLOAT false 16 0)
+             {:vao vao :vbo vbo})})
 
-    (println (.num_glyphs face))
-    (println (.num_faces face))
-    ))
+(defn create-vertex-buffer
+  [x y glyph]
+  (let [xpos (+ x (:bearing-left glyph))
+        ypos (- y (- (:height glyph) (:bearing-top glyph)))
+        xwpos (+ xpos (:width glyph))
+        yhpos (+ ypos (:height glyph))]
+    (doto (BufferUtils/createFloatBuffer 24)
+      (.put (float-array [xpos yhpos 0 0]))
+      (.put (float-array [xpos ypos 0 1]))
+      (.put (float-array [xwpos ypos 1 1]))
+      (.put (float-array [xpos yhpos 0 0]))
+      (.put (float-array [xwpos ypos 1 1]))
+      (.put (float-array [xwpos yhpos 1 0]))
+      (.flip))))
+
+(defn render-text
+  [x y text]
+  (doseq [c text]
+    (println (int c))))
 
 (defn render
   [gui delta]
-  )
+  (render-text 100 100 "hello"))
