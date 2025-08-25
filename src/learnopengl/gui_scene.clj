@@ -70,9 +70,9 @@
                  (slurp "resources/shaders/text.frag"))
         vbo (GL33/glGenBuffers)
         vao (GL33/glGenVertexArrays)]
+    (GL33/glUseProgram shader)
     (shader/load-matrix shader "projection" projection)
-    ;(error/check-error)
-    ;(shader/load-int shader "text" 0) ; INVALID OPERATION
+    (shader/load-int shader "text" 0)
 
     (GL33/glBindVertexArray vao)
     (GL33/glBindBuffer GL33/GL_ARRAY_BUFFER vbo)

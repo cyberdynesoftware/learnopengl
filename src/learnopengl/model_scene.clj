@@ -14,13 +14,6 @@
 (def path "resources/assets/backpack/")
 (def backpack "backpack.obj")
 
-(defn load-model
-  [asset]
-  (mapv (fn [mesh]
-          {:vao (ogl/load-vertices-and-indices (:vertices mesh) (:indices mesh))
-           :index-count (.capacity (:indices mesh))})
-        (:meshes asset)))
-
 (defn create
   []
   (let [backpack-model (model/load-model (format "%s%s" path backpack))
