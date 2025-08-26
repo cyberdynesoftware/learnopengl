@@ -58,7 +58,7 @@
      :advance (/ (.. face (glyph) (advance) (x)) 64)}))
 
 (def projection (doto (new Matrix4f)
-                  (.setOrtho2D 0 800 0 800)))
+                  (.setOrtho2D 0 400 0 300)))
 
 (defn create
   []
@@ -81,7 +81,7 @@
     (GL33/glVertexAttribPointer 0 4 GL33/GL_FLOAT false 16 0)
 
     {:font (let [face (load-face "resources/arial.ttf")]
-             (FreeType/FT_Set_Pixel_Sizes face 0 48)
+             (FreeType/FT_Set_Pixel_Sizes face 0 16)
              ;(println (.num_glyphs face))
              (->> (range 128)
                   (mapv #(create-glyph face %))))
@@ -123,7 +123,8 @@
   [gui delta]
   (let [shader (:shader gui)]
     (GL33/glUseProgram shader)
+    (shader/load-matrix shader "projection" projection)
     (shader/load-float3 shader "textColor" 0 1 0)
     (GL33/glBindVertexArray (:vao gui))
     (GL33/glActiveTexture GL33/GL_TEXTURE0)
-    (render-text gui 200 200 "hello")))
+    (render-text gui 8 8 (format "FPS: %d" (int (/ 1 delta))))))

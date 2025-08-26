@@ -24,6 +24,7 @@
   (reify GLFWFramebufferSizeCallbackI
     (invoke [_ _ x y]
       (reset! camera/aspect (float (/ x y)))
+      (.setOrtho2D gui/projection 0 x 0 y)
       (GL33/glViewport (float 0) (float 0) (float x) (float y)))))
 
 (defn -main
