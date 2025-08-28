@@ -60,6 +60,10 @@
 (def projection (doto (new Matrix4f)
                   (.setOrtho2D 0 400 0 300)))
 
+(def glyph-range
+  {:start 0x20
+   :end 0x7f})
+
 (defn create
   []
   (GL33/glPixelStorei GL33/GL_UNPACK_ALIGNMENT 1)
@@ -82,9 +86,10 @@
 
     (let [face (load-face "resources/arial.ttf")]
       (FreeType/FT_Set_Pixel_Sizes face 0 16)
-      {:font              (->> (range (.num_glyphs face))
+      {:font              (->> (range (:start glyph-range)
+                                      (:end glyph-range))
                                (mapv #(create-glyph face %)))
-       :num-glyphs (.num_glyphs face)
+       ;:num-glyphs (.num_glyphs face)
        :shader shader
        :vao vao
        :vbo vbo})))
@@ -108,7 +113,7 @@
   [gui x y text]
   (loop [text text
          x x]
-    (let [i (int (first text))
+    (let [i (- (int (first text)) (:start glyph-range))
           rest-text (rest text)
           glyph (get (:font gui) i)]
       (GL33/glBindTexture GL33/GL_TEXTURE_2D (:texture glyph))
@@ -131,10 +136,5 @@
     (GL33/glBindVertexArray (:vao gui))
     (GL33/glActiveTexture GL33/GL_TEXTURE0)
     (render-text gui 8 8 (format "FPS: %d" (int (/ 1 delta))))
-    (loop [y 600
-           i 0]
-      (if (< (+ i 64) (:num-glyphs gui))
-        (do
-          (render-text gui 0 y (font-string i (+ i 64)))
-          (recur (- y 20) (+ i 64)))
-        (render-text gui 0 y (font-string i (:num-glyphs gui)))))))
+    (doseq [y (take 20 (range 200 2000 20))]
+      (render-text gui 2 y (font-string (:start glyph-range) (:end glyph-range))))))
