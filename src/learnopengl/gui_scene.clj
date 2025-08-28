@@ -80,14 +80,14 @@
     (GL33/glEnableVertexAttribArray 0)
     (GL33/glVertexAttribPointer 0 4 GL33/GL_FLOAT false 16 0)
 
-    {:font (let [face (load-face "resources/arial.ttf")]
-             (FreeType/FT_Set_Pixel_Sizes face 0 16)
-             ;(println (.num_glyphs face))
-             (->> (range 128)
-                  (mapv #(create-glyph face %))))
-     :shader shader
-     :vao vao
-     :vbo vbo}))
+    (let [face (load-face "resources/arial.ttf")]
+      (FreeType/FT_Set_Pixel_Sizes face 0 16)
+      {:font              (->> (range (.num_glyphs face))
+                               (mapv #(create-glyph face %)))
+       :num-glyphs (.num_glyphs face)
+       :shader shader
+       :vao vao
+       :vbo vbo})))
 
 (defn create-vertex-buffer
   [x y glyph]
@@ -111,13 +111,16 @@
     (let [i (int (first text))
           rest-text (rest text)
           glyph (get (:font gui) i)]
-      ;(println (format "%d %d" i x))
       (GL33/glBindTexture GL33/GL_TEXTURE_2D (:texture glyph))
       (GL33/glBindBuffer GL33/GL_ARRAY_BUFFER (:vbo gui))
       (GL33/glBufferSubData GL33/GL_ARRAY_BUFFER 0 (create-vertex-buffer x y glyph))
       (GL33/glDrawArrays GL33/GL_TRIANGLES 0 6)
       (when (not-empty rest-text)
         (recur rest-text (+ x (:advance glyph)))))))
+
+(defn font-string
+  [start end]
+  (apply str (map char (range start end))))
 
 (defn render
   [gui delta]
@@ -127,4 +130,11 @@
     (shader/load-float3 shader "textColor" 0 1 0)
     (GL33/glBindVertexArray (:vao gui))
     (GL33/glActiveTexture GL33/GL_TEXTURE0)
-    (render-text gui 8 8 (format "FPS: %d" (int (/ 1 delta))))))
+    (render-text gui 8 8 (format "FPS: %d" (int (/ 1 delta))))
+    (loop [y 600
+           i 0]
+      (if (< (+ i 64) (:num-glyphs gui))
+        (do
+          (render-text gui 0 y (font-string i (+ i 64)))
+          (recur (- y 20) (+ i 64)))
+        (render-text gui 0 y (font-string i (:num-glyphs gui)))))))
